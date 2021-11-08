@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <queue>
 #include <set>
 #include <math.h>
@@ -196,58 +197,109 @@ Node Move(Node currNode, const QueueingFunction &function, const Direction &dir)
 void GeneralSearch(int problem[PUZZLE_SIZE], const QueueingFunction &function) {
     priority_queue<Node> q;
     set<string> visited;
+    int nodesExpanded = 0;
+    int maxQueueSize = 0;
     
     q.push(Node(0, 0, problem));
 
     while (!q.empty()) {
+        maxQueueSize = max(maxQueueSize, (int)q.size());
         Node temp = q.top();
         q.pop();
         visited.insert(ToString(temp.state));
 
         if (TargetFound(temp.state)) {
             cout << "Solution found at depth: " << temp.depth << endl;
+            cout << "Maximum queue size: " << maxQueueSize << endl;
+            cout << "Total nodes expanded: " << nodesExpanded << endl;
             return;
         } else {
+            // Pos holds the position of the 0 tile.
             Pos p(temp.state);
-            
+
             if (p.y > 0) {
                 Node t = Move(temp, function, Up);
                 if (visited.find(ToString(t.state)) == visited.end()) {
                     q.push(t);
+                    nodesExpanded++;
                 }
             }
-            if (p.y < 2) {
+            if (p.y < sqrt(PUZZLE_SIZE)-1) {
                 Node t = Move(temp, function, Down);
                 if (visited.find(ToString(t.state)) == visited.end()) {
                     q.push(t);
+                    nodesExpanded++;
                 }
             }
             if (p.x > 0) {
                 Node t = Move(temp, function, Left);
                 if (visited.find(ToString(t.state)) == visited.end()) {
                     q.push(t);
+                    nodesExpanded++;
                 }
             }
-            if (p.x < 2) {
+            if (p.x < sqrt(PUZZLE_SIZE)-1) {
                 Node t = Move(temp, function, Right);
                 if (visited.find(ToString(t.state)) == visited.end()) {
                     q.push(t);
+                    nodesExpanded++;
                 }
             }
         }
     }
+
+    cout << "No solution found." << endl;
+}
+
+/* RunTestCases()
+        Runs all the sample test cases given and
+        outputs the results
+*/
+void RunTestCases() {
+    static constexpr int numTestCases = 8;
+    int testCases[numTestCases][PUZZLE_SIZE] = {
+        {1,2,3,4,5,6,7,8,0},
+        {1,2,3,4,5,6,0,7,8},
+        {1,2,3,5,0,6,4,7,8},
+        {1,3,6,5,0,2,4,7,8},
+        {1,3,6,5,0,7,4,8,2},
+        {1,6,7,5,0,3,4,8,2},
+        {7,1,2,4,8,5,6,3,0},
+        {0,7,2,4,6,1,3,5,8},
+    };
+
+    for (int i = 0; i < numTestCases; i++) {
+        cout << "Starting Puzzle:" << endl;
+        DisplayPuzzle(testCases[i]);
+
+        cout << "Uniform Cost Search:" << endl;
+        auto start = high_resolution_clock::now();
+        GeneralSearch(testCases[i], Uniform); 
+        auto stop = high_resolution_clock::now();
+        double duration = duration_cast<nanoseconds>(stop - start).count();
+        duration *= 1e-9;
+        cout << fixed << "Time taken: " << duration << setprecision(9) << " sec" << endl;
+        
+        cout << endl << "Misplaced Tile Heuristic:" << endl;
+        start = high_resolution_clock::now();
+        GeneralSearch(testCases[i], Misplaced);
+        stop = high_resolution_clock::now();
+        duration = duration_cast<nanoseconds>(stop - start).count();
+        duration *= 1e-9;
+        cout << fixed << "Time taken: " << duration << setprecision(9) << " sec" << endl;
+
+        cout << endl << "Manhattan Distance Heuristic:" << endl;
+        start = high_resolution_clock::now();
+        GeneralSearch(testCases[i], Manhattan);
+        stop = high_resolution_clock::now();
+        duration = duration_cast<nanoseconds>(stop - start).count();
+        duration *= 1e-9;
+        cout << fixed << "Time taken: " << duration << setprecision(9) << " sec" << endl;
+        cout << endl;
+    }
 }
 
 int main() {
-    int trivial[PUZZLE_SIZE] = {1,2,3,4,5,6,7,8,0};
-    int problem2[PUZZLE_SIZE] = {1,2,3,4,5,6,0,7,8};
-    int problem4[PUZZLE_SIZE] = {1,2,3,5,0,6,4,7,8};
-    int problem8[PUZZLE_SIZE] = {1,3,6,5,0,2,4,7,8};
-    int problem12[PUZZLE_SIZE] = {1,3,6,5,0,7,4,8,2};
-    int problem16[PUZZLE_SIZE] = {1,6,7,5,0,3,4,8,2};
-    int problem20[PUZZLE_SIZE] = {7,1,2,4,8,5,6,3,0};
-    int problem24[PUZZLE_SIZE] = {0,7,2,4,6,1,3,5,8};
-
     int problem[PUZZLE_SIZE];
     int function;
 
@@ -255,8 +307,14 @@ int main() {
     cout << "1) Uniform Cost Search" << endl;
     cout << "2) Misplaced Tile" << endl;
     cout << "3) Manhattan Distance" << endl;
+    cout << "4) Run all given test cases" << endl;
 
     cin >> function;
+
+    if (function == 4) {
+        RunTestCases();
+        return 0;
+    }
 
     cout << endl << "Enter 8 puzzle (ex: 0 7 2 4 6 1 3 5 8)" << endl;
 
@@ -269,9 +327,9 @@ int main() {
     auto start = high_resolution_clock::now();
     GeneralSearch(problem, (QueueingFunction)(function-1));
     auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-
-    cout << "Time taken: " << duration.count() << endl;
+    double duration = duration_cast<nanoseconds>(stop - start).count();
+    duration *= 1e-9;
+    cout << fixed << "Time taken: " << duration << setprecision(9) << " sec" << endl;
 
     return 0;
 }
