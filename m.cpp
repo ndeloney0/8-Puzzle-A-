@@ -2,27 +2,33 @@
 #include <queue>
 #include <set>
 #include <math.h>
+#include <chrono>
 
+using namespace std::chrono;
 using namespace std;
 
 #define PUZZLE_SIZE 9
+
+static constexpr int solution[PUZZLE_SIZE] = {1,2,3,4,5,6,7,8,0};
 
 enum QueueingFunction {Uniform, Misplaced, Manhattan};
 enum Direction {Up, Down, Left, Right};
 
 struct Node {
-    Node(int d, int s[PUZZLE_SIZE]) {
+    Node(int d, int c, int s[PUZZLE_SIZE]) {
         for (int i = 0; i < PUZZLE_SIZE; i++) {
             state[i] = s[i];
         }
         depth = d;
+        cost = c;
     }
 
     friend bool operator< (const Node& n1, const Node& n2) {
-        return n1.depth > n2.depth;
+        return n1.cost > n2.cost;
     }
 
-    int depth;
+    int depth; // g(n)
+    int cost; // this is f(n) = g(n) + h(n)
     int state[PUZZLE_SIZE];
 };
 
@@ -44,7 +50,6 @@ struct Pos {
         Returns whether the solution has been found or not.
 */
 bool TargetFound(int problem[PUZZLE_SIZE]) {
-    int solution[PUZZLE_SIZE] = {1,2,3,4,5,6,7,8,0};
     for (int i = 0; i < PUZZLE_SIZE; i++) {
         if (problem[i] != solution[i]) {
             return false;
@@ -67,6 +72,32 @@ string ToString(int problem[PUZZLE_SIZE]) {
     return res;
 }
 
+int MisplacedTile(int problem[PUZZLE_SIZE]) {
+    int total = 0;
+    for (int i = 0; i < PUZZLE_SIZE; i++) {
+        if (problem[i] != solution[i]) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int ManhattanDist(int problem[PUZZLE_SIZE]) {
+    int dist = 0;
+    int x1, y1, x2, y2;
+    for (int i = 0; i < PUZZLE_SIZE; i++) {
+        x1 = i % 3;
+        y1 = i / 3;
+        for (int j = 0; j < PUZZLE_SIZE; j++) {
+            if (problem[i] == solution[j]) {
+                x2 = j % 3;
+                y2 = j / 3;
+                dist += abs(x1 - x2) + abs(y1-y2);
+            }
+        }
+    }
+    return dist;
+}
 
 Node Move(Node currNode, const QueueingFunction &function, const Direction &dir) {
     int newState[PUZZLE_SIZE];
@@ -98,26 +129,31 @@ Node Move(Node currNode, const QueueingFunction &function, const Direction &dir)
     newState[p.index + movement] = 0;
     newState[p.index] = temp;
 
+    int heuristic = 0;
+
     switch (function) {
         // Do nothing
         case Uniform: 
             break;
         case Misplaced:
-
+            heuristic = MisplacedTile(newState);
             break;
         case Manhattan:
-
+            heuristic = ManhattanDist(newState);
             break;
     }
 
-    return Node(currNode.depth + 1, newState);
+    int depth = currNode.depth + 1;
+    int cost = depth + heuristic;
+
+    return Node(depth, cost, newState);
 }
 
 void GeneralSearch(int problem[PUZZLE_SIZE], const QueueingFunction &function) {
     priority_queue<Node> q;
     set<string> visited;
     
-    q.push(Node(0, problem));
+    q.push(Node(0, 0, problem));
 
     while (!q.empty()) {
         Node temp = q.top();
@@ -167,7 +203,27 @@ int main() {
     int problem16[PUZZLE_SIZE] = {1,6,7,5,0,3,4,8,2};
     int problem20[PUZZLE_SIZE] = {7,1,2,4,8,5,6,3,0};
     int problem24[PUZZLE_SIZE] = {0,7,2,4,6,1,3,5,8};
+
+    auto start = high_resolution_clock::now();
+    GeneralSearch(problem24, Manhattan);
+    auto stop = high_resolution_clock::now();
+
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    cout << duration.count() << endl;
+
+    start = high_resolution_clock::now();
+    GeneralSearch(problem24, Misplaced);
+    stop = high_resolution_clock::now();
+
+    duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
+
+    start = high_resolution_clock::now();
     GeneralSearch(problem24, Uniform);
-    
+    stop = high_resolution_clock::now();
+
+    duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
     return 0;
 }
