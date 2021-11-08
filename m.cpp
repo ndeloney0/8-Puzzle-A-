@@ -7,6 +7,7 @@
 using namespace std::chrono;
 using namespace std;
 
+// Change PUZZLE_SIZE to be 16 or 25 for 15-puzzle and 24-puzzle respectively
 #define PUZZLE_SIZE 9
 
 static constexpr int solution[PUZZLE_SIZE] = {1,2,3,4,5,6,7,8,0};
@@ -14,6 +15,12 @@ static constexpr int solution[PUZZLE_SIZE] = {1,2,3,4,5,6,7,8,0};
 enum QueueingFunction {Uniform, Misplaced, Manhattan};
 enum Direction {Up, Down, Left, Right};
 
+/* Node
+        Holds the data for the current node.
+        The cost is the depth plus the heuristic.
+        The heuristic is calculated when we expand each
+        new node.
+*/
 struct Node {
     Node(int d, int c, int s[PUZZLE_SIZE]) {
         for (int i = 0; i < PUZZLE_SIZE; i++) {
@@ -32,6 +39,9 @@ struct Node {
     int state[PUZZLE_SIZE];
 };
 
+/* Pos
+        Holds the position of the '0' tile.
+*/
 struct Pos {
     Pos(int problem[PUZZLE_SIZE]) {
         for (int i = 0; i < PUZZLE_SIZE; i++) {
@@ -58,12 +68,21 @@ bool TargetFound(int problem[PUZZLE_SIZE]) {
     return true;
 }
 
+/* DisplayPuzzle()
+        Displays the current puzzle state
+*/
 void DisplayPuzzle(int problem[PUZZLE_SIZE]) {
     cout << problem[0] << " " << problem[1] << " " << problem[2] << endl;
     cout << problem[3] << " " << problem[4] << " " << problem[5] << endl;
     cout << problem[6] << " " << problem[7] << " " << problem[8] << endl << endl;
 }
 
+/* ToString()
+        Converts the puzzle into a string. 
+        Primarily needed to have a visited array
+        of all the states in the puzzle as we
+        expand new nodes.
+*/
 string ToString(int problem[PUZZLE_SIZE]) {
     string res;
     for (int i = 0; i < PUZZLE_SIZE; i++) {
@@ -72,6 +91,11 @@ string ToString(int problem[PUZZLE_SIZE]) {
     return res;
 }
 
+/* MisplacedTile()
+        Returns the misplaced tile heuristic, 
+        by summing up each tile which is in an
+        incorrect place.
+*/
 int MisplacedTile(int problem[PUZZLE_SIZE]) {
     int total = 0;
     for (int i = 0; i < PUZZLE_SIZE; i++) {
@@ -82,6 +106,12 @@ int MisplacedTile(int problem[PUZZLE_SIZE]) {
     return total;
 }
 
+/* ManhattanDist()
+        Returns the manhattan distance heuristic,
+        sums the absolute difference of the 
+        current tile and the solution tile for
+        every tile
+*/
 int ManhattanDist(int problem[PUZZLE_SIZE]) {
     int dist = 0;
     int x1, y1, x2, y2;
@@ -99,6 +129,13 @@ int ManhattanDist(int problem[PUZZLE_SIZE]) {
     return dist;
 }
 
+/* Move()
+        Our EXPAND function. We expand every possible direction
+        and return the new nodes generated in each direction.
+        We find our heuristic here and calculate the total
+        cost as f(n) = depth + heuristic and save it in the expanded
+        node.
+*/
 Node Move(Node currNode, const QueueingFunction &function, const Direction &dir) {
     int newState[PUZZLE_SIZE];
     Pos p(currNode.state);
@@ -149,6 +186,13 @@ Node Move(Node currNode, const QueueingFunction &function, const Direction &dir)
     return Node(depth, cost, newState);
 }
 
+/* GeneralSearch()
+        Our general search function holds the queue for all the nodes we generate.
+        If we have seen a state, we don't generate that node. Otherwise, we generate
+        a node in every possible direction which hasn't been seen.
+        When we find the state of a node matches the solution, we have found our
+        solution to be the depth of the current node.
+*/
 void GeneralSearch(int problem[PUZZLE_SIZE], const QueueingFunction &function) {
     priority_queue<Node> q;
     set<string> visited;
@@ -165,7 +209,7 @@ void GeneralSearch(int problem[PUZZLE_SIZE], const QueueingFunction &function) {
             return;
         } else {
             Pos p(temp.state);
-
+            
             if (p.y > 0) {
                 Node t = Move(temp, function, Up);
                 if (visited.find(ToString(t.state)) == visited.end()) {
