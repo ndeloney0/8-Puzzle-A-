@@ -204,26 +204,30 @@ int main() {
     int problem20[PUZZLE_SIZE] = {7,1,2,4,8,5,6,3,0};
     int problem24[PUZZLE_SIZE] = {0,7,2,4,6,1,3,5,8};
 
-    auto start = high_resolution_clock::now();
-    GeneralSearch(problem24, Manhattan);
-    auto stop = high_resolution_clock::now();
+    int problem[PUZZLE_SIZE];
+    int function;
 
+    cout << "Enter algorithm #:" << endl;
+    cout << "1) Uniform Cost Search" << endl;
+    cout << "2) Misplaced Tile" << endl;
+    cout << "3) Manhattan Distance" << endl;
+
+    cin >> function;
+
+    cout << endl << "Enter 8 puzzle (ex: 0 7 2 4 6 1 3 5 8)" << endl;
+
+    for (int i = 0; i < PUZZLE_SIZE; i++) {
+        cin >> problem[i];
+    }
+
+    cout << endl;
+
+    auto start = high_resolution_clock::now();
+    GeneralSearch(problem, (QueueingFunction)(function-1));
+    auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
 
-    cout << duration.count() << endl;
+    cout << "Time taken: " << duration.count() << endl;
 
-    start = high_resolution_clock::now();
-    GeneralSearch(problem24, Misplaced);
-    stop = high_resolution_clock::now();
-
-    duration = duration_cast<microseconds>(stop - start);
-    cout << duration.count() << endl;
-
-    start = high_resolution_clock::now();
-    GeneralSearch(problem24, Uniform);
-    stop = high_resolution_clock::now();
-
-    duration = duration_cast<microseconds>(stop - start);
-    cout << duration.count() << endl;
     return 0;
 }
